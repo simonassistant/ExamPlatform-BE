@@ -1,11 +1,39 @@
 from decimal import Decimal
-from typing import List
+from enum import IntEnum
+from typing import List, Optional, Sequence
 
-from app.data.dao.paper_dao import QUESTION_TYPE_SINGLE_CHOICE, QUESTION_TYPE_TRUE_FALSE, \
-    QUESTION_TYPE_DEFINITE_MULTIPLE_CHOICE, QUESTION_TYPE_INDEFINITE_MULTIPLE_CHOICE, QUESTION_TYPE_WRITING, \
-    QUESTION_TYPE_LISTENING, QUESTION_TYPE_SPEAKING, QUESTION_TYPE_FILL_IN_THE_BLANK
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.data.dao.paper_dao import (
+    QUESTION_TYPE_SINGLE_CHOICE,
+    QUESTION_TYPE_TRUE_FALSE,
+    QUESTION_TYPE_DEFINITE_MULTIPLE_CHOICE,
+    QUESTION_TYPE_INDEFINITE_MULTIPLE_CHOICE,
+    QUESTION_TYPE_WRITING,
+    QUESTION_TYPE_LISTENING,
+    QUESTION_TYPE_SPEAKING,
+    QUESTION_TYPE_FILL_IN_THE_BLANK,
+)
 from app.data.dto.question_option_dto import QuestionOptionDTO
 from app.data.entity.entities import Question
+
+
+class QuestionType(IntEnum):
+    SINGLE_CHOICE = QUESTION_TYPE_SINGLE_CHOICE
+    TRUE_FALSE = QUESTION_TYPE_TRUE_FALSE
+    DEFINITE_MULTIPLE_CHOICE = QUESTION_TYPE_DEFINITE_MULTIPLE_CHOICE
+    INDEFINITE_MULTIPLE_CHOICE = QUESTION_TYPE_INDEFINITE_MULTIPLE_CHOICE
+    FILL_IN_THE_BLANK = QUESTION_TYPE_FILL_IN_THE_BLANK
+    WRITING = QUESTION_TYPE_WRITING
+    LISTENING = QUESTION_TYPE_LISTENING
+    SPEAKING = QUESTION_TYPE_SPEAKING
+
+
+def resolve_inheritance(*values: Optional[int | QuestionType]):
+    for value in values:
+        if value is not None:
+            return QuestionType(value)
+    return None
 
 
 class QuestionDTO:
@@ -68,3 +96,48 @@ class QuestionDTO:
             section_id = self.section_id,
             paper_id = self.paper_id
         )
+
+
+class QuestionOptionPayload(BaseModel):
+    model_config = ConfigDict(extra='forbid', populate_by_name=True)
+
+    id: Optional[str] = None
+    seq: int = 1
+    option_text: str = Field(alias="optionText")
+    is_correct: bool = Field(default=False, alias="isCorrect")
+    explanation: Optional[str] = None
+
+
+class QuestionPayload(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    id: Optional[str] = None
+    seq: int
+    title: str
+    description: Optional[str] = None
+    question_type: Optional[QuestionType] = None
+    score: Optional[Decimal] = None
+    correct_answer: Optional[str | Sequence[str]] = None
+    media_url: Optional[str] = None
+    options: List[QuestionOptionPayload] = []
+    resolved_question_type: Optional[QuestionType] = None
+
+    @field_validator('question_type', mode='before')
+    @classmethod
+    def _coerce_question_type(cls, value):  # type: ignore[override]
+        if value is None or value == '':
+            return None
+        if isinstance(value, QuestionType):
+            return value
+        if isinstance(value, IntEnum):
+            return QuestionType(value.value)
+        try:
+            numeric = int(value)
+            return QuestionType(numeric)
+        except Exception:
+            parsed = QuestionDTO.md_parse_question_type(str(value))
+            return QuestionType(parsed) if parsed is not None else None
+
+    def with_inherited_type(self, inherited: Optional[QuestionType]):
+        self.resolved_question_type = resolve_inheritance(self.question_type, inherited)
+        return self

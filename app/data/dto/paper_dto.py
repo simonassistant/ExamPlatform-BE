@@ -54,6 +54,13 @@ class PaperDTO:
         with open(filename, 'r', encoding='utf-8') as f:
             md_content = f.read()
         tokens = self.md.parse(md_content)
+        return self._parse_tokens(tokens)
+
+    def md_parse_content(self, md_content: str) -> "PaperDTO":
+        tokens = self.md.parse(md_content)
+        return self._parse_tokens(tokens)
+
+    def _parse_tokens(self, tokens) -> "PaperDTO":
         token_type: str = ''
         idx = 0
         paper_dto = PaperDTO()
@@ -99,14 +106,16 @@ class PaperDTO:
             elif token.type == 'fence':
                 if idx == 1:
                     paper_dto.md_parse_meta(token.content)
-                elif idx == 2:
+                elif idx == 2 and paper_dto.sections:
                     paper_dto.sections[-1].md_parse_meta(token.content)
-                elif idx == 3:
+                elif idx == 3 and paper_dto.sections and paper_dto.sections[-1].question_groups:
                     paper_dto.sections[-1].question_groups[-1].md_parse_meta(token.content)
-                elif idx == 4:
+                elif idx == 4 and paper_dto.sections and paper_dto.sections[-1].question_groups and paper_dto.sections[-1].question_groups[-1].questions:
                     paper_dto.sections[-1].question_groups[-1].questions[-1].md_parse_meta(token.content)
-                elif idx == 5:
-                    paper_dto.sections[-1].question_groups[-1].questions[-1].question_options[-1].md_parse_meta(token.content)
+                elif idx == 5 and paper_dto.sections and paper_dto.sections[-1].question_groups and paper_dto.sections[-1].question_groups[-1].questions:
+                    last_question = paper_dto.sections[-1].question_groups[-1].questions[-1]
+                    if last_question.question_options:
+                        last_question.question_options[-1].md_parse_meta(token.content)
         return paper_dto
 
     def md_parse_meta(self, text: str):

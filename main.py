@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from app.ui.examinee import exam_ui
 from app.ui.proctor import proctor_ui
+from app.ui.common import paper_ui
 
 app = FastAPI(
     title="EP",
@@ -18,6 +19,14 @@ app.include_router(
     proctor_ui.router,
     prefix="/proctor/proctor",
     tags=["proctor"],
+)
+app.include_router(
+    proctor_ui.assignment_api,
+    tags=["assignments"],
+)
+app.include_router(
+    paper_ui.router,
+    tags=["papers"],
 )
 
 

@@ -1,5 +1,8 @@
 import hashlib
+import logging
+from copy import deepcopy
 from datetime import datetime
+from typing import Any, Dict, Iterable
 
 def md5_encode(text):
     md5 = hashlib.md5()
@@ -32,3 +35,31 @@ def respond_fail(code: int = -1, msg: str='fail', data: dict = None) -> dict:
         "msg": msg,
         "data": data
     }
+
+
+_AUDIT_REDACT_KEYS = {"password", "token", "secret", "answer", "correct_answer"}
+_logger = logging.getLogger("examplatform.audit")
+
+
+def redact_payload(payload: Dict[str, Any] | None) -> Dict[str, Any]:
+    """Redact sensitive fields before logging audit events."""
+    if payload is None:
+        return {}
+    clone = deepcopy(payload)
+    for key in list(clone.keys()):
+        if key.lower() in _AUDIT_REDACT_KEYS:
+            clone[key] = "<redacted>"
+        elif isinstance(clone[key], dict):
+            clone[key] = redact_payload(clone[key])
+    return clone
+
+
+def emit_audit(event: str, payload: Dict[str, Any] | None = None, user_id: str | None = None):
+    """Emit a structured audit log entry with basic redaction applied."""
+    safe_payload = redact_payload(payload)
+    _logger.info({
+        "event": event,
+        "user_id": user_id,
+        "payload": safe_payload,
+        "timestamp": datetime.utcnow().isoformat(),
+    })

@@ -142,3 +142,11 @@ deploy/pdmaner/.back_*
 
 # IDEA
 .idea/
+
+# Editor & OS noise
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+.env.*
