@@ -186,16 +186,16 @@ The API uses **JWT (JSON Web Tokens)** for authentication:
 
 ## Question Types
 
-| Code | Type | Category |
-|------|------|----------|
-| 1 | Single Choice | Reading |
-| 2 | True/False | Reading |
-| 3 | Definite Multiple Choice | Reading |
-| 4 | Indefinite Multiple Choice | Reading |
-| 5 | Fill-in-the-Blank | Reading/Writing |
-| 6 | Writing | Writing |
-| 7 | Listening | Listening |
-| 8 | Speaking | Speaking (voice recording) |
+| Code | Type | Markdown Key | Category |
+|------|------|--------------|----------|
+| 1 | Single Choice | `single choice` | Reading |
+| 2 | True/False | `true/false` | Reading |
+| 3 | Definite Multiple Choice | `definite multiple choice` | Reading |
+| 4 | Indefinite Multiple Choice | `indefinite multiple choice` | Reading |
+| 5 | Fill-in-the-Blank | `fill in the blank` | Reading/Writing |
+| 6 | Writing | `writing` | Writing |
+| 7 | Listening | `listening` | Listening |
+| 8 | Speaking | `speaking` | Speaking |
 
 ## Environment Files
 

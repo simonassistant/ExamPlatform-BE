@@ -6,15 +6,19 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from app.data.dto.question_dto import QuestionPayload, QuestionType, resolve_inheritance, QuestionOptionPayload
 
 
-class QuestionGroupPayload(BaseModel):
+class PaperSectionPayload(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
     id: Optional[str] = None
     seq: int
-    title: str
-    content: Optional[str] = None
+    name: str
+    duration: Optional[int] = None
     question_type: Optional[QuestionType] = None
     unit_score: Optional[Decimal] = None
+    full_score: Optional[Decimal] = None
+    pass_score: Optional[Decimal] = None
+    content: Optional[str] = None
+    note: Optional[str] = None
     questions: List[QuestionPayload] = []
 
     @field_validator('question_type', mode='before')
@@ -29,37 +33,12 @@ class QuestionGroupPayload(BaseModel):
         return self
 
 
-class PaperSectionPayload(BaseModel):
-    model_config = ConfigDict(extra='forbid')
-
-    id: Optional[str] = None
-    seq: int
-    name: str
-    duration: Optional[int] = None
-    question_type: Optional[QuestionType] = None
-    unit_score: Optional[Decimal] = None
-    full_score: Optional[Decimal] = None
-    pass_score: Optional[Decimal] = None
-    note: Optional[str] = None
-    question_groups: List[QuestionGroupPayload] = []
-
-    @field_validator('question_type', mode='before')
-    @classmethod
-    def _coerce_question_type(cls, value):  # type: ignore[override]
-        return QuestionPayload._coerce_question_type(value)  # reuse logic
-
-    def apply_inheritance(self, inherited_type: Optional[QuestionType]):
-        resolved_type = resolve_inheritance(self.question_type, inherited_type)
-        for group in self.question_groups:
-            group.apply_inheritance(resolved_type)
-        return self
-
-
 class PaperPayload(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
     id: Optional[str] = None
     title: str
+    paper_type: Optional[int] = None
     duration: Optional[int] = None
     question_type: QuestionType
     full_score: Optional[Decimal] = None
@@ -84,7 +63,6 @@ __all__ = [
     'QuestionType',
     'QuestionOptionPayload',
     'QuestionPayload',
-    'QuestionGroupPayload',
     'PaperSectionPayload',
     'PaperPayload',
 ]

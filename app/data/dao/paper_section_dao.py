@@ -42,7 +42,7 @@ class PaperSectionDAO(BaseDAO):
     def update(section: PaperSection):
         statement = update(PaperSection).where(and_(PaperSection.paper_id == section.paper_id,
             PaperSection.name == section.name)).values(
-            seq=section.seq, note=section.note, question_type=section.question_type,
+            seq=section.seq, name=section.name, content=section.content, note=section.note, question_type=section.question_type,
             duration=section.duration, full_score=section.full_score,
             pass_score=section.pass_score, unit_score=section.unit_score, question_num=section.question_num,
             is_deleted=section.is_deleted, updated_at=datetime.now(), updated_by=section.updated_by)

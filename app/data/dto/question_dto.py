@@ -46,7 +46,6 @@ class QuestionDTO:
         self.score = 0
         self.section_id = None
         self.paper_id = None
-        self.question_group_id = None
         self.question_options:List[QuestionOptionDTO] = []
 
     def md_parse_meta(self, content: str):
@@ -68,7 +67,7 @@ class QuestionDTO:
         match text.strip().lower().replace('-', ' ').replace('_', ' '):
             case 'single choice' | 'single choice question':
                 return QUESTION_TYPE_SINGLE_CHOICE
-            case 'true false' | 'true or false' | 'yes no' | 'yes or no':
+            case 'true false' | 'true or false' | 'yes no' | 'yes or no' | 'true/false':
                 return QUESTION_TYPE_TRUE_FALSE
             case 'definite multiple choice' | 'multiple choice' | 'definite multiple choice question'| 'multiple choice question' | 'reading':
                 return QUESTION_TYPE_DEFINITE_MULTIPLE_CHOICE
@@ -92,7 +91,6 @@ class QuestionDTO:
             content = self.content,
             question_type = self.question_type,
             score = self.score,
-            question_group_id = self.question_group_id,
             section_id = self.section_id,
             paper_id = self.paper_id
         )
@@ -113,7 +111,7 @@ class QuestionPayload(BaseModel):
 
     id: Optional[str] = None
     seq: int
-    title: str
+    content: str
     description: Optional[str] = None
     question_type: Optional[QuestionType] = None
     score: Optional[Decimal] = None

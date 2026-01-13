@@ -20,7 +20,7 @@ from app.ui.proctor.assignment_service import (
     AssignmentLockedError,
     AssignmentService,
 )
-from app.util.util import respond_fail, respond_suc
+from app.util.util import md5_encode, respond_suc, respond_fail
 from app.util.util_jwt import jwt_token_encode
 
 router = APIRouter()
@@ -37,7 +37,10 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     if username == "":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please input student ID!")
     user:Users = UserDAO.get_by_email(username)
-    if (not user) or user.is_deleted or (user.pwd != form_data.password):
+    
+    # Check password (MD5 hashed in DB)
+    hashed_pwd = md5_encode(form_data.password)
+    if (not user) or user.is_deleted or (user.pwd != hashed_pwd):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid User!")
 
     return {

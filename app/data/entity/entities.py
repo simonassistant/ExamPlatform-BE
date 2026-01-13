@@ -72,7 +72,6 @@ class ExamAnswer(Base):
     marked: Mapped[Optional[bool]] = mapped_column(Boolean, comment='Marked for review')
     is_correct: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Is Answer Correct;0:Wrong; 1:Half Correct; 2:All Correct')
     score: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(6, 2), comment='Exam Answer Score')
-    question_group_id: Mapped[Optional[str]] = mapped_column(String(26), comment='Question Group')
     question_id: Mapped[Optional[str]] = mapped_column(String(26), comment='Question ID')
     examinee_id: Mapped[Optional[str]] = mapped_column(String(26), comment='Examinee ID')
     exam_section_id: Mapped[Optional[str]] = mapped_column(String(26), comment='Exam Section ID')
@@ -126,6 +125,7 @@ class Paper(Base):
     id: Mapped[str] = mapped_column(String(26), primary_key=True, comment='ID')
     title: Mapped[Optional[str]] = mapped_column(String(255), comment='Paper Title')
     note: Mapped[Optional[str]] = mapped_column(Text, comment='Paper Note')
+    paper_type: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Paper Type;1.Reading; 2.Listening; 3.Writing; 4.Speaking')
     section_num: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Section Num')
     question_num: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Question Num')
     question_type: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Question Type;1.single choice; 2.true-false; 3.definite multiple choice; 4.indefinite multiple choice; 5.fill-in-the-blank; 6.writing; 7.listening; 8.speaking')
@@ -150,7 +150,8 @@ class PaperSection(Base):
 
     id: Mapped[str] = mapped_column(String(26), primary_key=True, comment='ID')
     seq: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Sequence')
-    name: Mapped[Optional[str]] = mapped_column(String(20), comment='Name')
+    name: Mapped[Optional[str]] = mapped_column(String(50), comment='Name')
+    content: Mapped[Optional[str]] = mapped_column(Text, comment='Section Content (passage text or audio HTML)')
     duration: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Duration in Minutes')
     question_num: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Question Num')
     question_type: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Question Type;1.single choice; 2.true-false; 3.definite multiple choice; 4.indefinite multiple choice; 5.fill-in-the-blank; 6.writing; 7.listening; 8.speaking')
@@ -179,31 +180,6 @@ class Question(Base):
     content: Mapped[Optional[str]] = mapped_column(Text, comment='Content')
     question_type: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Question Type;1.single choice; 2.true-false; 3.definite multiple choice; 4.indefinite multiple choice; 5.fill-in-the-blank; 6.writing; 7.listening; 8.speaking')
     score: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(6, 2), comment='Score')
-    question_group_id: Mapped[Optional[str]] = mapped_column(String(26), comment='Question Group ID')
-    section_id: Mapped[Optional[str]] = mapped_column(String(26), comment='Section ID')
-    paper_id: Mapped[Optional[str]] = mapped_column(String(26), comment='Paper ID')
-    created_by: Mapped[Optional[str]] = mapped_column(String(26), comment='Creator ID')
-    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, comment='Create Datetime')
-    updated_by: Mapped[Optional[str]] = mapped_column(String(26), comment='Updator ID')
-    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, comment='Update Datetime')
-    is_deleted: Mapped[Optional[bool]] = mapped_column(Boolean, comment='Is Deleted')
-
-
-class QuestionGroup(Base):
-    __tablename__ = 'question_group'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='question_group_pkey'),
-        {'comment': 'Question Group'}
-    )
-
-    id: Mapped[str] = mapped_column(String(26), primary_key=True, comment='ID')
-    seq: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Sequence')
-    code: Mapped[Optional[str]] = mapped_column(String(20), comment='Code')
-    title: Mapped[Optional[str]] = mapped_column(String(255), comment='Title')
-    content: Mapped[Optional[str]] = mapped_column(String, comment='Content')
-    question_type: Mapped[Optional[int]] = mapped_column(SmallInteger, comment='Question Type;1.single choice; 2.true-false; 3.definite multiple choice; 4.indefinite multiple choice; 5.fill-in-the-blank; 6.writing; 7.listening; 8.speaking')
-    unit_score: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(6, 2), comment='Unit/Question Score')
-    full_score: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(6, 2), comment='Full Score')
     section_id: Mapped[Optional[str]] = mapped_column(String(26), comment='Section ID')
     paper_id: Mapped[Optional[str]] = mapped_column(String(26), comment='Paper ID')
     created_by: Mapped[Optional[str]] = mapped_column(String(26), comment='Creator ID')

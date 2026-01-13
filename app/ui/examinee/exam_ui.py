@@ -14,7 +14,6 @@ from app.data.dao.exam_section_dao import ExamSectionDAO
 from app.data.dao.paper_dao import PaperDAO, QUESTION_TYPE_FILL_IN_THE_BLANK
 from app.data.dao.paper_section_dao import PaperSectionDAO
 from app.data.dao.question_dao import QuestionDAO
-from app.data.dao.question_group_dao import QuestionGroupDAO
 from app.data.dao.question_option import QuestionOptionDAO
 from app.data.dao.schedule_section_dao import ScheduleSectionDAO
 from app.data.dao.user_dao import UserDAO
@@ -226,7 +225,6 @@ async def get_question(current_user_id: Annotated[str, Depends(get_current_user_
     question = QuestionDAO.get_by_paper_section_seq(exam_section.paper_id, exam_section.paper_section_id, seq)
     if question is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question is not found!")
-    question_group = QuestionGroupDAO().get(question.question_group_id)
     exam_answer = ExamAnswerDAO.get_by_examinee_question(examinee_id=current_user_id, question_id=question.id)
     options = QuestionOptionDAO.list_by_question_4_exam(exam_section.paper_id, question.id)
     if question.question_type == QUESTION_TYPE_FILL_IN_THE_BLANK:
@@ -238,14 +236,13 @@ async def get_question(current_user_id: Annotated[str, Depends(get_current_user_
     return {
         "exam_answer": exam_answer,
         "question": question,
-        "question_group": question_group,
         "question_options": options,
     }
 
-@router.post("/questions_in_group", response_model=None, tags=["exam"])
-async def list_questions_in_group(current_user_id: Annotated[str, Depends(get_current_user_id)],
+@router.post("/questions_in_section", response_model=None, tags=["exam"])
+async def list_questions_in_section(current_user_id: Annotated[str, Depends(get_current_user_id)],
                        exam_id: Annotated[str, Form()],
-                       question_group_id: Annotated[str, Form()]):
+                       section_id: Annotated[str, Form()]):
     exam = ExamDAO().get(exam_id)
     if exam.examinee_id != current_user_id:
         print(f"Exam not exist for user {current_user_id}!")
@@ -254,12 +251,7 @@ async def list_questions_in_group(current_user_id: Annotated[str, Depends(get_cu
         print(f"Not in Exam for user {current_user_id}!")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not in Exam!")
 
-    question_group = QuestionGroupDAO().get(question_group_id)
-    if question_group.paper_id != exam.paper_id:
-        print(f"Question group {question_group_id} is invalid for user {current_user_id}!")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question group is invalid!")
-
-    questions = QuestionDAO.list_by_question_group(question_group_id)
+    questions = QuestionDAO.list_by_section(section_id)
     question_ids = [question.id for question in questions if question.question_type!=QUESTION_TYPE_FILL_IN_THE_BLANK]
     options = QuestionOptionDAO.list_by_question_group(question_ids)
     [setattr(option, 'is_correct', None) for option in options]
@@ -284,7 +276,6 @@ async def mark(current_user_id: Annotated[str, Depends(get_current_user_id)],
                 exam_section_id=exam_section_id,
                 examinee_id=current_user_id,
                 question_id=question_id,
-                question_group_id=question.question_group_id,
                 seq = question.seq,
             )
         )
@@ -297,7 +288,6 @@ async def save_answer(current_user_id: Annotated[str, Depends(get_current_user_i
                         exam_id: Annotated[str, Form()],
                         exam_section_id: Annotated[str, Form()],
                         question_id: Annotated[str, Form()],
-                        question_group_id: Annotated[str, Form()],
                         question_seq: Annotated[int, Form()]):
     if exam_answer_id is None or exam_answer_id == "":
         exam_answer = ExamAnswer(
@@ -306,7 +296,6 @@ async def save_answer(current_user_id: Annotated[str, Depends(get_current_user_i
             exam_section_id=exam_section_id,
             examinee_id=current_user_id,
             question_id=question_id,
-            question_group_id=question_group_id,
             seq=question_seq,
         )
         exam_answer_id = ExamAnswerDAO.add(exam_answer)

@@ -6,7 +6,6 @@ from markdown_it import MarkdownIt
 
 from app.data.dto.paper_section_dto import PaperSectionDTO
 from app.data.dto.question_dto import QuestionDTO
-from app.data.dto.question_group_dto import QuestionGroupDTO
 from app.data.dto.question_option_dto import QuestionOptionDTO
 from app.data.entity.entities import Paper
 
@@ -25,13 +24,13 @@ class PaperDTO:
         self.paper_id = None
         self.title = None
         self.note = None
+        self.paper_type = None
         self.duration = 0
         self.question_type = None
         self.unit_score:Decimal = Decimal('0')
         self.full_score:Decimal = Decimal('0')
         self.pass_score:Decimal = Decimal('0')
         self.sections:List[PaperSectionDTO] = []
-        self.question_groups:List[QuestionGroupDTO] = []
         self.questions:List[QuestionDTO] = []
 
     def _append_paragraph(self, src: str | None, content: str) -> str:
@@ -42,12 +41,10 @@ class PaperDTO:
         if idx == 1:
             paper_dto.md_parse_append_paper_note(content)
         elif idx == 2:
-            paper_dto.md_parse_append_section_note(content)
+            paper_dto.md_parse_append_section_content(content)
         elif idx == 3:
-            paper_dto.md_parse_append_question_group_content(content)
-        elif idx == 4:
             paper_dto.md_parse_append_question_content(content)
-        elif idx == 5:
+        elif idx == 4:
             paper_dto.md_parse_append_question_option(content)
 
     def md_parse(self, filename: str) -> "PaperDTO":
@@ -80,9 +77,6 @@ class PaperDTO:
                 elif token.markup == '####':
                     token_type = 'h4'
                     idx = 4
-                elif token.markup == '#####':
-                    token_type = 'h5'
-                    idx = 5
             elif token.type == 'heading_close' or token.type == 'paragraph_close':
                 token_type = ''
             elif token.type in ['ordered_list_open', 'ordered_list_close', 'bullet_list_open', 'bullet_list_close', 'list_item_open', 'list_item_close']:
@@ -91,14 +85,15 @@ class PaperDTO:
             elif token.type == 'paragraph_open':
                 token_type = 'p'
             elif token.type == 'inline':
-                if token_type == 'h1':
+                # Handle checkbox list items as options (- [ ] or - [x])
+                if idx == 4 and (token.content.startswith('[ ] ') or token.content.startswith('[x] ')):
+                    paper_dto.md_parse_append_question_option(token.content)
+                elif token_type == 'h1':
                     paper_dto.md_parse_title(token.content)
                 elif token_type == 'h2':
                     paper_dto.md_parse_section_name(token.content)
                 elif token_type == 'h3':
-                    paper_dto.md_parse_question_group_title(token.content)
-                elif token_type == 'h4':
-                    paper_dto.md_parse_question_in_group(token.content)
+                    paper_dto.md_parse_question(token.content)
                 elif token_type == 'p':
                     self._append_content(paper_dto, idx, token.content)
             elif token.type == 'html_block':
@@ -108,12 +103,10 @@ class PaperDTO:
                     paper_dto.md_parse_meta(token.content)
                 elif idx == 2 and paper_dto.sections:
                     paper_dto.sections[-1].md_parse_meta(token.content)
-                elif idx == 3 and paper_dto.sections and paper_dto.sections[-1].question_groups:
-                    paper_dto.sections[-1].question_groups[-1].md_parse_meta(token.content)
-                elif idx == 4 and paper_dto.sections and paper_dto.sections[-1].question_groups and paper_dto.sections[-1].question_groups[-1].questions:
-                    paper_dto.sections[-1].question_groups[-1].questions[-1].md_parse_meta(token.content)
-                elif idx == 5 and paper_dto.sections and paper_dto.sections[-1].question_groups and paper_dto.sections[-1].question_groups[-1].questions:
-                    last_question = paper_dto.sections[-1].question_groups[-1].questions[-1]
+                elif idx == 3 and paper_dto.sections and paper_dto.sections[-1].questions:
+                    paper_dto.sections[-1].questions[-1].md_parse_meta(token.content)
+                elif idx == 4 and paper_dto.sections and paper_dto.sections[-1].questions:
+                    last_question = paper_dto.sections[-1].questions[-1]
                     if last_question.question_options:
                         last_question.question_options[-1].md_parse_meta(token.content)
         return paper_dto
@@ -127,6 +120,8 @@ class PaperDTO:
                 value = data[1].strip()
                 if key == 'id':
                     self.paper_id = value
+                elif key == 'paper type' or key == 'paper_type':
+                    self.paper_type = int(value)
                 elif key == 'question type':
                     self.question_type = QuestionDTO.md_parse_question_type(value)
                 elif key == 'duration':
@@ -148,24 +143,11 @@ class PaperDTO:
         paper_section_dto.paper_id = self.paper_id
         self.sections.append(paper_section_dto)
 
-    def md_parse_question_group_title(self, text: str):
+    def md_parse_question(self, text: str):
         paper_section_dto:PaperSectionDTO = self.sections[-1]
-        question_group_dto:QuestionGroupDTO = QuestionGroupDTO()
-        question_group_dto.seq = len(paper_section_dto.question_groups) + 1
-        question_group_dto.title = text.strip()
-        question_group_dto.paper_id = self.paper_id
-        question_group_dto.section_id = paper_section_dto.section_id
-        paper_section_dto.question_groups.append(question_group_dto)
-        self.question_groups.append(question_group_dto)
-
-    def md_parse_question_in_group(self, text: str):
-        paper_section_dto:PaperSectionDTO = self.sections[-1]
-        question_group_dto:QuestionGroupDTO = paper_section_dto.question_groups[-1]
         question_dto = QuestionDTO()
-        question_dto.question_group_id = question_group_dto.question_group_id
         question_dto.paper_id = self.paper_id
         question_dto.section_id = paper_section_dto.section_id
-        question_group_dto.questions.append(question_dto)
         paper_section_dto.questions.append(question_dto)
         self.questions.append(question_dto)
 
@@ -179,14 +161,9 @@ class PaperDTO:
     def md_parse_append_paper_note(self, text: str):
         self.note = self.md.render(self._append_paragraph(self.note, text))
 
-    def md_parse_append_section_note(self, text: str):
+    def md_parse_append_section_content(self, text: str):
         section_dto = self.sections[-1]
-        section_dto.note = self.md.render(self._append_paragraph(section_dto.note, text))
-
-    def md_parse_append_question_group_content(self, text: str):
-        section_dto = self.sections[-1]
-        question_group_dto = section_dto.question_groups[-1]
-        question_group_dto.content = self._append_paragraph(question_group_dto.content, text)
+        section_dto.content = (section_dto.content or '') + self.md.render(text)
 
     def md_parse_append_question_content(self, text: str):
         section_dto = self.sections[-1]
@@ -214,6 +191,7 @@ class PaperDTO:
             id = self.paper_id,
             title = self.title,
             note = self.note,
+            paper_type = self.paper_type,
             question_type = self.question_type,
             unit_score = self.unit_score,
             pass_score = self.pass_score,

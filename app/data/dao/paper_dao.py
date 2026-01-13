@@ -33,6 +33,7 @@ class PaperDAO(BaseDAO):
     def update(paper: Paper):
         statement = update(Paper).where(Paper.id == paper.id).values(
             title=paper.title, note=paper.note, duration=paper.duration,
+            paper_type=paper.paper_type,
             question_type=paper.question_type, unit_score=paper.unit_score, full_score=paper.full_score,
             pass_score=paper.pass_score, question_num=paper.question_num, section_num=paper.section_num,
             is_deleted=paper.is_deleted, updated_at=datetime.now(), updated_by=paper.updated_by)

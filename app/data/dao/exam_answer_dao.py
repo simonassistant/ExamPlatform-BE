@@ -19,7 +19,7 @@ class ExamAnswerDAO(BaseDAO):
     @staticmethod
     def mark(user_id:str, instance_id:str, mark: bool):
         stmt = update(ExamAnswer).where(ExamAnswer.id == instance_id, ExamAnswer.examinee_id == user_id).values(
-            mark=mark, updated_at=datetime.now(), updated_by=user_id)
+            marked=mark, updated_at=datetime.now(), updated_by=user_id)
         db_exec(stmt)
 
     @staticmethod

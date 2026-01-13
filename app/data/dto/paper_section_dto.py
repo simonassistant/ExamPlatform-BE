@@ -2,7 +2,6 @@ from decimal import Decimal
 from typing import List
 
 from app.data.dto.question_dto import QuestionDTO
-from app.data.dto.question_group_dto import QuestionGroupDTO
 from app.data.entity.entities import PaperSection
 
 
@@ -18,8 +17,8 @@ class PaperSectionDTO:
         self.full_score:Decimal = Decimal('0')
         self.pass_score:Decimal = Decimal('0')
         self.note = None
+        self.content = None
         self.paper_id = None
-        self.question_groups:List[QuestionGroupDTO] = []
         self.questions:List[QuestionDTO] = []
 
     def md_parse_meta(self, content: str):
@@ -46,6 +45,7 @@ class PaperSectionDTO:
             seq = self.seq,
             name = self.name,
             note = self.note,
+            content = self.content,
             question_type  = self.question_type,
             unit_score = self.unit_score,
             pass_score = self.pass_score,
